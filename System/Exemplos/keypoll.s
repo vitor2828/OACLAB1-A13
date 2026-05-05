@@ -11,8 +11,8 @@
 # Polling do teclado e echo na tela
 	li s0,0			# zera o contador
 CONTA:  addi s0,s0,1		# incrementa o contador
-	jal KEY1		# le o teclado	blocking
-#	jal KEY2       		# le o teclado 	non-blocking
+	#jal KEY1		# le o teclado	blocking
+	jal KEY2       		# le o teclado 	non-blocking
 	j CONTA			# volta ao loop
 
 ### Espera o usu�rio pressionar uma tecla
