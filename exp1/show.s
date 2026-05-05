@@ -5,10 +5,26 @@ show:
 	li a3, 0x38	# Define cor de fundo e de frente
 	li a4, 0	# Define frame
 
-	li t0, 2
-	beq a0, t0, showImag
+	li t0, 1		# Caso baskara diga que ha raizes reais
+	beq a0, t0, showReal	# Salte para showReal	
+	li t0, 2		# Caso baskara diga que ha raizes complexas
+	beq a0, t0, showImag	# Salte para showImag
+	ret			# Tratamento funcao constante
 
-#ShowReal
+showReal:
+	fcvt.w.s t0, fa0		# t0 = (int)a
+	bne t0, zero, showRaizDupla	# Se a funcao for quadratica
+	# Caso reta afim
+	la a0, r	# Pega string "R = "
+	li a7, 104	# Printa "R = "
+	ecall
+	flw fa0, 0(sp)	# Pega raiz na pilha
+	li a7, 102	# Imprime raiz
+	ecall
+	addi sp,sp,4	# Libera 1 word da pilha
+	ret
+
+showRaizDupla:
 	la a0, r1	# Pega string "R(1) = "
 	li a7, 104	# Printa "R(1) = "
 	ecall

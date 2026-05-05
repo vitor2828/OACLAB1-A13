@@ -1,4 +1,23 @@
 baskara:
+	fcvt.w.s t0, fa0	# t0 = (int)a
+	bne t0,zero, QUADRATICA	# Se a funcao for quadratica
+	
+	fcvt.w.s t0, fa1	# t0 = (int)b
+	bne t0, zero, RETAAFIM	# Se a funcao for uma reta
+	ret			# Tratamento para caso de funcao constante
+	
+RETAAFIM:
+	# Se a funcao for uma reta
+	fneg.s fa2, fa2		# c = -c
+	fdiv.s ft0, fa2, fa1	# fa0 = -c/b : Raiz da reta
+
+	addi sp, sp, -4		# Prepara a pilha para receber uma raiz
+	fsw ft0, 0(sp)		# Empilha a raiz unica na pilha
+
+	li a0, 1		# a0 = 1 (Retorno inteiro da funcao para raizes reais)
+	ret
+
+QUADRATICA:
 	# Calculo delta
 	fmul.s fs0, fa1, fa1	# fs0 = b^2
 	li t0, 4
