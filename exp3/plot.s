@@ -211,12 +211,14 @@ GRAFICO_LOOP:		fmv.s fa0, ft4
 			li a5, 0
 			li a7, 147
 			ecall
+
+			addi s0, s0, 1
+			fadd.s ft4, ft4, ft5
 			
 			bge s0, s1, GRAFICO_LOOP
 			
 			li a7, 10
 			ecall
-			
 			
 
 .include "fx.s"
