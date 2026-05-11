@@ -250,6 +250,7 @@ GRAFICO_LOOP:		blt s0, s1, EXIT
 			li a4, 0
 			li a5, 0
 			li a7, 147
+<<<<<<< HEAD
 			ecall # desenhamos a reta
 			
 			addi s0, s0, 1 # adicao para que o segundo ponto dessa iteracao seja o primeiro da proxima. Isso garante que as linhas sejam continuas.
@@ -257,6 +258,18 @@ GRAFICO_LOOP:		blt s0, s1, EXIT
 			j GRAFICO_LOOP
 			
 CASO_FUNCAO_LINEAR:
+=======
+			ecall
+
+			addi s0, s0, 1
+			fadd.s ft4, ft4, ft5
+			
+			bge s0, s1, GRAFICO_LOOP
+			
+			li a7, 10
+			ecall
+			
+>>>>>>> 81ae30bfd98b9257dddd30ef8c1ee37ed3769f54
 
 ## a escala serah o dobro do C, para garantirmos que o ponto em que a funcao corta o eixo y seja bem representado. Alem disso, a multiplicamos pelo coeficiente B, para funcoes lineares
 ## de crescimento excessivamente rapido
