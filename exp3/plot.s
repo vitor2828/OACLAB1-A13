@@ -1,15 +1,10 @@
-.include "MACROSv24.s"
 
 .data
 
 ## A escala eh o tamanho dos semieixos x e y
-ESCALA: .float 1.0
-ESPACO: .string " "
+ESCALA_Y: .float 1.0
+ESCALA_X: .float 1.0
 
-
-A: .float 1
-B: .float 1
-C: .float 1
 
 ## plot -> procedimento para desenhar o grafico no bitmap display
 ## TODO: criar procedimento para converter valor real para valor em pixel
@@ -23,19 +18,14 @@ C: .float 1
 
 # primeiro passo: limpar a tela e desenhar os eixos
 
-
-			la t0, A
-			flw fa0, 0(t0) # carrega o coeficiente A
-						
-			la t0, B
-			flw fa1, 0(t0) # carrega o coeficiente B
+plot:			addi sp, sp, -4
+			sw ra, 0(sp)
 			
-			la t0, C
-			flw fa2, 0(t0) # carrega o coeficiente C
-			
-# esses carregamentos sao provisorios, apenas para o funcionamento desse codigo independentemente
-			
-			li a0, 255
+			fmv.s ft9, fa0
+			fmv.s ft10, fa1
+			fmv.s ft11, fa2 
+				
+			li a0, 0
 			li a1, 0
 			li a7, 148
 			ecall # pinta a tela toda de branco
@@ -44,7 +34,7 @@ C: .float 1
 			li a1, 220
 			li a2, 160
 			li a3, 20
-			li a4, 0
+			li a4, 0x38
 			li a5, 0
 			li a7, 147
 			ecall # desenha o eixo y
@@ -53,7 +43,7 @@ C: .float 1
 			li a1, 120
 			li a2, 300
 			li a3, 120
-			li a4, 0
+			li a4, 0x38
 			li a5, 0
 			li a7, 147
 			ecall # desenha o eixo x
@@ -101,32 +91,29 @@ C: .float 1
 			
 ### CRIAR ESCALA A DEPENDER DO PONTO MEDIO ###
 
-# aqui, definimos a escala como o dobro do maior ponto medio multiplicado pelo coeficiente B. Usamos o ponto médio
+# aqui, definimos a escala como o dobro do maior ponto medio
 # para garantir que a curva sera mostrada, elemento principal de uma funcao quadratica. Dessa forma, a escala sera o 
 # maior ponto medio multiplicado pelo coeficiente B
 
 			li t0, 0
 			fcvt.s.w ft2, t0
 			feq.s t0, ft0, ft2
-			bne t0, zero, EXIT_ESCALA_XM # exceçao: caso Xm for 0, usar escala padrao
+			bne t0, zero, EXIT_ESCALA_XM # exceçao: caso Xm for 0, usar 
 
 			fadd.s ft0, ft0, ft0 # dobro do ponto medio
 			
-			li t0, 0
-			fcvt.s.w ft2, t0
-			feq.s t1, fa1, ft2 # se B for zero, nao podemos multiplica-lo. Caso contrario, perderemos a escala
-			bnez t1, B_IGUAL_0_X
-			fmul.s ft0, fa1, ft0
-			
-			
-B_IGUAL_0_X:		flt.s t0, ft0, ft2
+			la t2, ESCALA_X
+			fsw ft0, 0(t2)
+					
+			flt.s t0, ft0, ft2
 			beqz t0, EXIT_ESCALA_XM # tratamento para escalas negativas. Os valores devem sempre ser positivos, visto que estamos
 			# tratando de proporcao
-			
 			
 			li t1, -1
 			fcvt.s.w ft2, t1
 			fmul.s ft0, ft0, ft2
+			
+			fsw ft0, 0(t2)
 			
 EXIT_ESCALA_XM:		
 ## Em seguida, todos os passos serao os mesmos, mas para o eixo y
@@ -137,59 +124,73 @@ EXIT_ESCALA_XM:
 			bne t0, zero, INICIO_GRAFICO
 
 			fadd.s ft1, ft1, ft1
-				
-			li t0, 0
-			fcvt.s.w ft2, t0
-			feq.s t1, fa1, ft2
-			bnez t1, B_IGUAL_0_Y
-			fmul.s ft1, ft1, fa1
 			
-B_IGUAL_0_Y:		flt.s t0, ft1, ft2	
-			beqz t0, EXIT_ESCALA_YM
+			la t2, ESCALA_Y
+			fsw ft1, 0(t2)
+			
+			flt.s t0, ft1, ft2	
+			beqz t0, INICIO_GRAFICO
 				
 			li t1, -1
 			fcvt.s.w ft2, t1
 			fmul.s ft1, ft1, ft2
-					
-EXIT_ESCALA_YM:		la t0, ESCALA
-			fge.s t1, ft0, ft1 # pegamos o maior valor entre X e Y para definir a escala. Optamos por uma unica proporcao entre os eixos, para garantir que sempre sera
-			# quadrada
-			bnez t1, X_MAIOR_Y
-			j Y_MAIOR_X
 			
-X_MAIOR_Y:		fsw ft0, 0(t0) # salvando o valor de X caso seja maior
+			fsw ft1, 0(t2)
+			
+			li t0, 0
+			fcvt.s.w ft3, t0
+			
+			feq.s t0, ft3, ft0
+			bnez t0, ARRUMAR_X
+			feq.s t0, ft3, ft1
+			bnez t0, ARRUMAR_Y
+			
+ARRUMAR_X: 		feq.s t0, ft3, ft1
+			bnez t0, ESCALA_PADRAO
+			la t0, ESCALA_X
+			fsw ft1, 0(t0)
 			j INICIO_GRAFICO
 			
-						
-Y_MAIOR_X:		fsw ft1, 0(t0) # salvando o valor de Y caso seja maior
-
-
+ARRUMAR_Y:		feq.s t0, ft3, ft0
+			bnez t0, ESCALA_PADRAO
+			la t0, ESCALA_Y
+			fsw ft0, 0(t0)
+			j INICIO_GRAFICO
 			
-INICIO_GRAFICO:		la t0, A
-			flw fa1, 0(t0) # carregando os valores de X para chamar o procedimento FX
+ESCALA_PADRAO:		li t0, 1
+			fcvt.s.w ft0, t0
 			
-			la t0, B
-			flw fa2, 0(t0)
+			la t0, ESCALA_Y
+			fsw ft0, 0(t0)
 			
-			la t0, C
-			flw fa3, 0(t0)
-
+			la t0, ESCALA_X
+			fsw ft0, 0(t0)
+							
+INICIO_GRAFICO:		fmv.s fa1, ft9
+			fmv.s fa2, ft10
+			fmv.s fa3, ft11  # carregando os valores de X para chamar o procedimento FX
+			
 			li s0, 300 # contador do loop. Fiz de 300 a 20 para ja usar como coordenadas do eixo x
 			li s1, 20
 			
 			li t1, 140
 			fcvt.s.w ft0, t1
-			la t1, ESCALA
+			la t1, ESCALA_X
 			flw ft4, 0(t1)
 			
-			fmv.s fa0, ft4
-			li a7, 2
-			ecall
+			li t0, 6
+			fcvt.s.w ft3, t0
+			fmul.s ft4, ft4, ft3
+				
+			la t1, ESCALA_Y
+			flw ft2, 0(t1)
 			
-			fmv.s ft2, ft4
-			fdiv.s ft5, ft4, ft0 # divide a escala pela constante para obter o valor real
-			
+			li t0, 7
+			fcvt.s.w ft3, t0
+			fmul.s ft2, ft2, ft3
 						
+			fdiv.s ft5, ft4, ft0 # divide a escala pela constante para obter o valor real
+									
 # ft2 armazena a escala				
 # ft4 eh o valor inicial
 # ft5 eh o valor que deve ser subtraido de ft4 a cada loop
@@ -197,6 +198,7 @@ INICIO_GRAFICO:		la t0, A
 # a cada iterecao teremos dois pontos, para que possamos construir a reta
 
 GRAFICO_LOOP:		blt s0, s1, EXIT		
+
 	
 			fmv.s fa0, ft4 # em fa0 teremos o f(x) atual
 			jal FX
@@ -236,7 +238,7 @@ GRAFICO_LOOP:		blt s0, s1, EXIT
 			fdiv.s fa0, fa0, ft2
 			fcvt.w.s a3, fa0
 			addi a3, a3, 20
-			
+						
 # As verificacoes a seguir garantem que o ponto estara abaixo do limite do eixo Y. Caso nao estejam, simplesmente o ignoramos e passamos para o proximo
 				
 			li t1, 20
@@ -247,10 +249,9 @@ GRAFICO_LOOP:		blt s0, s1, EXIT
 			bgt a1, t1, GRAFICO_LOOP
 			bgt a3, t1, GRAFICO_LOOP
 				
-			li a4, 0
+			li a4, 0x38
 			li a5, 0
 			li a7, 147
-<<<<<<< HEAD
 			ecall # desenhamos a reta
 			
 			addi s0, s0, 1 # adicao para que o segundo ponto dessa iteracao seja o primeiro da proxima. Isso garante que as linhas sejam continuas.
@@ -258,18 +259,6 @@ GRAFICO_LOOP:		blt s0, s1, EXIT
 			j GRAFICO_LOOP
 			
 CASO_FUNCAO_LINEAR:
-=======
-			ecall
-
-			addi s0, s0, 1
-			fadd.s ft4, ft4, ft5
-			
-			bge s0, s1, GRAFICO_LOOP
-			
-			li a7, 10
-			ecall
-			
->>>>>>> 81ae30bfd98b9257dddd30ef8c1ee37ed3769f54
 
 ## a escala serah o dobro do C, para garantirmos que o ponto em que a funcao corta o eixo y seja bem representado. Alem disso, a multiplicamos pelo coeficiente B, para funcoes lineares
 ## de crescimento excessivamente rapido
@@ -278,8 +267,7 @@ CASO_FUNCAO_LINEAR:
 			li t0, 0
 			fcvt.s.w ft0, t0
 			
-			la t0, C
-			flw ft1, 0(t0)
+			fmv.s ft1, fa2
 			
 			feq.s t0, ft0, ft1
 			bnez t0, EXCECAO_C_ZERO # caso C for zero, temos que a funcao corta a origem. Portanto, a escala sera a padrao definida no .data
@@ -294,7 +282,7 @@ CASO_FUNCAO_LINEAR:
 			
 SEM_C_NEGATIVO:		
 
-			la t0, ESCALA
+			la t0, ESCALA_Y
 			fsw ft1, 0(t0) # atualizando o valor de ESCALA
 			
 EXCECAO_C_ZERO:
@@ -305,16 +293,11 @@ EXCECAO_C_ZERO:
 			li a0, 20
 			li a1, 300
 						
-			la t0, A
-			flw fa1, 0(t0)
+			fmv.s fa1, ft9
+			fmv.s fa2, ft10
+			fmv.s fa3, ft11
 			
-			la t0, B
-			flw fa2, 0(t0)
-			
-			la t0, C
-			flw fa3, 0(t0)
-			
-			la t0, ESCALA
+			la t0, ESCALA_Y
 			flw fs2, 0(t0)
 			fmv.s fs3, fs2
 			li t1, 0
@@ -322,6 +305,12 @@ EXCECAO_C_ZERO:
 			feq.s t1, fa2, ft2
 			bnez t1, FUNCAO_CONSTANTE # caso a funcao seja constante, nao multiplicamos pelo coeficiente angular, visto que zeraria a escala
 			fmul.s fs2, fs2, fa2 
+			flt.s t1, fs2, ft2
+			beqz t1, FUNCAO_CONSTANTE # tratamento para caso o B seja negativo, para nao inverter a escala
+			
+			li t1, -1
+			fcvt.s.w ft2, t1
+			fmul.s fs2, ft2, fs2
 			
 FUNCAO_CONSTANTE:
 			
@@ -352,14 +341,15 @@ FUNCAO_CONSTANTE:
 			fcvt.w.s a1, fa0
 			addi a1, a1, 20
 			
-			li a4, 0
+			li a4, 0x38
 			li a5, 0
 			li a7, 147 
 			ecall # desenhando a reta
 		
-EXIT:			li a7, 10
-			ecall
+EXIT:			
+			lw ra, 0(sp)
+			addi sp, sp, 4
+			ret
 			
 .include "fx.s"
-.include "SYSTEMv24.s"
 
