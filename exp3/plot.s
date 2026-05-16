@@ -19,7 +19,7 @@ ESCALA_X: .float 1.0
 # primeiro passo: limpar a tela e desenhar os eixos
 
 plot:			addi sp, sp, -4
-			sw ra, 0(sp)
+			sw ra, 0(sp) # armazena o ra
 			
 			fmv.s ft9, fa0
 			fmv.s ft10, fa1
@@ -63,31 +63,32 @@ plot:			addi sp, sp, -4
 
 # o codigo abaixo simplesmente calcula o Xm com a formula acima
 
-			fdiv.s ft0, fa1, fa0
-			li t0, 2
-			fcvt.s.w ft1, t0
-			fdiv.s ft0, ft0, ft1
-			li t0, -1
-			fcvt.s.w ft1, t0
-			fmul.s ft0, ft0, ft1
+			fdiv.s ft0, fa1, fa0 # ft0 = b/a
+			li t0, 2 # t0 = 2
+			fcvt.s.w ft1, t0 # converte o inteiro 2 no float 2.0
+			fdiv.s ft0, ft0, ft1 # ft0 = ft0 / 2
+			li t0, -1 # t0 = -1
+			fcvt.s.w ft1, t0 # converte o inteiro -1 no float -1.0
+			fmul.s ft0, ft0, ft1 # ft0 = -ft0
 
 # Ym = -(b² - 4ac)/4a
 # ft1 = Ym
 
-			fmul.s ft1, fa1, fa1
-			li t0, 4
-			fcvt.s.w ft2, t0
-			fmul.s ft2, ft2, fa0
-			fmul.s ft2, ft2, fa2
+# da mesma forma, calcula o Ym com a formula acima
+
+			fmul.s ft1, fa1, fa1 # ft1 = b²
+			li t0, 4 # t0 = 4
+			fcvt.s.w ft2, t0 # converte o inteiro 4 para o float 4.0
+			fmul.s ft2, ft2, fa0 # ft2 = 4*a
+			fmul.s ft2, ft2, fa2# ft2 = 4*a*c
 			li t0, -1
 			fcvt.s.w ft3, t0
-			fmul.s ft2, ft2, ft3
-			fadd.s ft1, ft1, ft2
-			fmul.s ft1, ft1, ft3
+			fsub.s ft1, ft1, ft2# ft1 = b^2 - 4ac
+			fmul.s ft1, ft1, ft3# ft1 = -ft1
 			li t0, 4
 			fcvt.s.w ft2, t0
-			fmul.s ft2, ft2, fa0
-			fdiv.s ft1, ft1, ft2
+			fmul.s ft2, ft2, fa0 # ft2 = 4a
+			fdiv.s ft1, ft1, ft2# ft1 = ft1/4a
 			
 ### CRIAR ESCALA A DEPENDER DO PONTO MEDIO ###
 
