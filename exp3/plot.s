@@ -292,11 +292,22 @@ EXCECAO_C_ZERO:
 # o a1 e a3 serao o valor real no eixo y convertido para a escala em pixels
 
 			li a0, 20
-			li a1, 300
+			li a2, 300
 						
 			fmv.s fa1, ft9
 			fmv.s fa2, ft10
 			fmv.s fa3, ft11
+			
+			li t0, 10
+			fcvt.w.s t1, fa2
+			
+			mul t1, t1, t0
+			bgez t1, SEM_TRATAR_ANGULO
+			li t0, -1
+			mul t1, t1, t0
+SEM_TRATAR_ANGULO: 
+			sub a2, a2, t1
+			add a0, a0, t1
 			
 			la t0, ESCALA_Y
 			flw fs2, 0(t0)
@@ -346,7 +357,8 @@ FUNCAO_CONSTANTE:
 			li a5, 0
 			li a7, 147 
 			ecall # desenhando a reta
-		
+			
+									
 EXIT:			
 			lw ra, 0(sp)
 			addi sp, sp, 4
